@@ -157,7 +157,7 @@ windows_build_jobs.extend(
         ),
         BuildJob(
             "install-qt",
-            "5.9.0",
+            "5.11.3",
             "windows",
             "desktop",
             "win64_msvc2015_64",
