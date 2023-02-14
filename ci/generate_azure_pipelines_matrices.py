@@ -256,3 +256,9 @@ print("Setting Variables below")
 print(
     f"##vso[task.setVariable variable=windows;isOutput=true]{json.dumps(matrices['windows'])}"
 )
+print(
+    f"##vso[task.setVariable variable=linux;isOutput=true]{''}"
+)
+print(
+    f"##vso[task.setVariable variable=mac;isOutput=true]{''}"
+)
