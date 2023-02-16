@@ -35,7 +35,7 @@ class BuildJob:
         is_autodesktop: bool = False,
         tool_options: Optional[Dict[str, str]] = None,
         check_output_cmd: Optional[str] = None,
-        emsdk_version: str = "sdk-fastcomp-1.38.27-64bit",
+        emsdk_version: str = "sdk-fastcomp-1.38.27-64bit@3.1.29",
         autodesk_arch_folder: Optional[str] = None,
     ):
         self.command = command
@@ -98,251 +98,38 @@ mac_build_jobs = []
 windows_build_jobs = []
 
 all_platform_build_jobs = [
-    PlatformBuildJobs("linux", linux_build_jobs),
-    PlatformBuildJobs("mac", mac_build_jobs),
     PlatformBuildJobs("windows", windows_build_jobs),
 ]
 
-# Linux Desktop
-for qt_version in qt_versions:
-    linux_build_jobs.append(
-        BuildJob("install-qt", qt_version, "linux", "desktop", "gcc_64", "gcc_64")
-    )
-
-# Mac Desktop
-for qt_version in qt_versions:
-    mac_build_jobs.append(
-        BuildJob("install-qt", qt_version, "mac", "desktop", "clang_64", "clang_64")
-    )
 
 # Windows Desktop
 windows_build_jobs.extend(
     [
         BuildJob(
             "install-qt",
-            "5.15.2",
-            "windows",
-            "desktop",
-            "win32_msvc2019",
-            "msvc2019",
-            mirror=random.choice(MIRRORS),
-        ),
-        BuildJob(
-            "install-qt",
-            "5.14.2",
-            "windows",
-            "desktop",
-            "win32_mingw73",
-            "mingw73_32",
-            mingw_variant="win32_mingw730",
-            mirror=random.choice(MIRRORS),
-        ),
-        BuildJob(
-            "install-qt",
-            "5.13.2",
+            "5.11.3",
             "windows",
             "desktop",
             "win64_msvc2015_64",
             "msvc2015_64",
+            subarchives="qttools qtbase qtwinextras qtmultimedia",
             mirror=random.choice(MIRRORS),
         ),
         BuildJob(
             "install-qt",
-            "5.15.2",
+            "5.11.3",
             "windows",
             "desktop",
-            "win64_mingw81",
-            "mingw81_64",
-            mingw_variant="win64_mingw810",
+            "win32_mingw53",
+            "mingw53_32",
+            mingw_variant="win32_mingw530",
+#            module="qtcharts qtnetworkauth qtscript",
+            subarchives="qttools qtbase qtwinextras qtmultimedia",
             mirror=random.choice(MIRRORS),
-        ),
-        # Known issue with Azure-Pipelines environment: it has a pre-installed mingw81 which cause link error.
-        # BuildJob('install', '5.15.0', 'windows', 'desktop', 'win32_mingw81', 'mingw81_32', mirror=MIRROR),
-        BuildJob(
-            "install-qt",
-            "5.15.2",
-            "windows",
-            "desktop",
-            "win64_msvc2019_64",
-            "msvc2019_64",
-            module="qtcharts qtnetworkauth",
-            mirror=random.choice(MIRRORS),
-        ),
-        BuildJob(
-            "install-qt",
-            "5.9.0",
-            "windows",
-            "desktop",
-            "win64_msvc2015_64",
-            "msvc2015_64",
-            module="qtcharts qtnetworkauth",
-            mirror=random.choice(MIRRORS),
-        ),
-        BuildJob(
-            "install-qt",
-            "5.14.2",
-            "windows",
-            "desktop",
-            "win64_mingw73",
-            "mingw73_64",
-            mingw_variant="win64_mingw730",
-            spec=">1,<5.15",  # Don't redirect output! Must be wrapped in quotes!
-            mirror=random.choice(MIRRORS),
-        ),
+        )
     ]
 )
 
-# Extra modules test
-linux_build_jobs.extend(
-    [
-        BuildJob(
-            "install-qt",
-            "5.15.2",
-            "linux",
-            "desktop",
-            "gcc_64",
-            "gcc_64",
-            module="qtcharts qtnetworkauth",
-        ),
-        BuildJob(
-            "install-qt", "5.14.2", "linux", "desktop", "gcc_64", "gcc_64", module="all"
-        ),
-        BuildJob(
-            "install-qt",
-            "5.15.2",
-            "linux",
-            "desktop",
-            "gcc_64",
-            "gcc_64",
-            subarchives="qtbase qttools qt icu",
-        ),
-        BuildJob(
-            "install-src", "6.1.0", "linux", "desktop", "gcc_64", "gcc_64", subarchives="qtlottie",
-            # Fail the job if this path does not exist:
-            check_output_cmd="ls -lh ./6.1.0/Src/qtlottie/",
-        ),
-        # Should install the `qtlottie` module, even though the archive `qtlottieanimation` is not specified:
-        BuildJob(
-            "install-doc", "6.1.0", "linux", "desktop", "gcc_64", "gcc_64",
-            subarchives="qtdoc", module="qtlottie",
-            # Fail the job if these paths do not exist:
-            check_output_cmd="ls -lh ./Docs/Qt-6.1.0/qtdoc/ ./Docs/Qt-6.1.0/qtlottieanimation/",
-        ),
-        # Should install the `qtcharts` module, even though the archive `qtcharts` is not specified:
-        BuildJob(
-            "install-example", "6.1.0", "linux", "desktop", "gcc_64", "gcc_64",
-            subarchives="qtdoc", module="qtcharts",
-            # Fail the job if these paths do not exist:
-            check_output_cmd="ls -lh ./Examples/Qt-6.1.0/charts/ ./Examples/Qt-6.1.0/demos/ ./Examples/Qt-6.1.0/tutorials/",
-        ),
-        # test for list commands
-        BuildJob('list', '5.15.2', 'linux', 'desktop', 'gcc_64', '', spec="<6", list_options={'HAS_WASM': "True"}),
-        BuildJob('list', '6.1.0', 'linux', 'desktop', 'gcc_64', '', spec=">6.0,<6.1.1", list_options={'HAS_WASM': "False"}),
-        BuildJob('list', '6.1.0', 'linux', 'android', 'android_armv7', '', spec=">6.0,<6.1.1", list_options={}),
-        # tests run on linux but query data about other platforms
-        BuildJob('list', '5.14.1', 'mac', 'ios', 'ios', '', spec="<=5.14.1", list_options={}),
-        BuildJob('list', '5.13.1', 'windows', 'winrt', 'win64_msvc2015_winrt_x64', '', spec=">5.13.0,<5.13.2", list_options={}),
-    ]
-)
-mac_build_jobs.extend(
-    [
-        BuildJob(
-            "install-qt",
-            "6.2.0",
-            "mac",
-            "desktop",
-            "clang_64",
-            "macos",
-            module="qtcharts qtnetworkauth",
-        ),
-        BuildJob(
-            "install-qt",
-            "5.14.2",
-            "mac",
-            "desktop",
-            "clang_64",
-            "clang_64",
-            module="qtcharts qtnetworkauth",
-        ),
-    ]
-)
-
-# WASM
-linux_build_jobs.append(
-    BuildJob("install-qt", "5.14.2", "linux", "desktop", "wasm_32", "wasm_32")
-)
-linux_build_jobs.append(
-    BuildJob("install-qt", "6.4.0", "linux", "desktop", "wasm_32", "wasm_32",
-             is_autodesktop=True, emsdk_version="sdk-3.1.14-64bit", autodesk_arch_folder="gcc_64")
-)
-mac_build_jobs.append(
-    BuildJob("install-qt", "5.14.2", "mac", "desktop", "wasm_32", "wasm_32")
-)
-mac_build_jobs.append(
-    BuildJob("install-qt", "6.4.0", "mac", "desktop", "wasm_32", "wasm_32",
-             is_autodesktop=True, emsdk_version="sdk-3.1.14-64bit", autodesk_arch_folder="clang_64")
-)
-windows_build_jobs.append(
-    BuildJob("install-qt", "5.14.2", "windows", "desktop", "wasm_32", "wasm_32")
-)
-windows_build_jobs.append(
-    BuildJob("install-qt", "6.4.0", "windows", "desktop", "wasm_32", "wasm_32",
-             is_autodesktop=True, emsdk_version="sdk-3.1.14-64bit", autodesk_arch_folder="mingw_64",
-             mingw_variant="win64_mingw900")
-)
-
-# mobile SDK
-mac_build_jobs.extend(
-    [
-        BuildJob("install-qt", "6.4.0", "mac", "ios", "ios", "ios", module="qtsensors", is_autodesktop=True),
-        BuildJob("install-qt", "6.2.4", "mac", "ios", "ios", "ios", module="qtsensors", is_autodesktop=False),
-        BuildJob("install-qt", "6.4.1", "mac", "android", "android_armv7", "android_armv7", is_autodesktop=True),
-        BuildJob("install-qt", "6.1.0", "mac", "android", "android_armv7", "android_armv7", is_autodesktop=True),
-    ]
-)
-linux_build_jobs.extend(
-    [
-        BuildJob("install-qt", "6.1.0", "linux", "android", "android_armv7", "android_armv7", is_autodesktop=True),
-        BuildJob("install-qt", "6.4.1", "linux", "android", "android_arm64_v8a", "android_arm64_v8a", is_autodesktop=True),
-    ]
-)
-
-# Qt 6.3.0 for Windows-Android has win64_mingw available, but not win64_mingw81.
-# This will test that the path to mingw is not hardcoded.
-windows_build_jobs.extend(
-    [
-        BuildJob("install-qt", "6.3.0", "windows", "android", "android_armv7", "android_armv7", is_autodesktop=True),
-        BuildJob("install-qt", "6.4.1", "windows", "android", "android_x86_64", "android_x86_64", is_autodesktop=True),
-    ]
-)
-
-# Test binary patch of qmake
-linux_build_jobs.extend(
-    [
-        # New output dir is shorter than the default value; qmake could fail to
-        # locate prefix dir if the value is patched wrong
-        BuildJob(
-            "install-qt",
-            "5.12.11",
-            "linux",
-            "desktop",
-            "gcc_64",
-            "gcc_64",
-            output_dir="/t/Q",
-        ),
-        # New output dir is longer than the default value.
-        # This case is meant to work without any bugfix; if this fails, the test is setup wrong
-        BuildJob(
-            "install-qt",
-            "5.12.11",
-            "linux",
-            "desktop",
-            "gcc_64",
-            "gcc_64",
-            output_dir="/some/super/long/arbitrary/path/to" * 5,
-        ),
-    ]
-)
 
 qt_creator_bin_path = "./Tools/QtCreator/bin/"
 qt_creator_mac_bin_path = "./Qt Creator.app/Contents/MacOS/"
@@ -361,16 +148,6 @@ tool_options_mac = {
     "TEST_TOOL1_CMD": f'"{qt_creator_mac_bin_path}qbs" --version',
     "LIST_TOOL1_CMD": f'ls "{qt_creator_mac_bin_path}"',
 }
-windows_build_jobs.append(
-    BuildJob("install-tool", "", "windows", "desktop", "", "", tool_options=tool_options)
-)
-linux_build_jobs.append(
-    BuildJob("install-tool", "", "linux", "desktop", "", "", tool_options=tool_options)
-)
-mac_build_jobs.append(
-    BuildJob("install-tool", "", "mac", "desktop", "", "", tool_options=tool_options_mac)
-)
-
 matrices = {}
 
 for platform_build_job in all_platform_build_jobs:
@@ -410,7 +187,8 @@ for platform_build_job in all_platform_build_jobs:
                 ("OUTPUT_DIR", build_job.output_dir if build_job.output_dir else ""),
                 ("QT_BINDIR", build_job.qt_bindir()),
                 ("WIN_QT_BINDIR", build_job.win_qt_bindir()),
-                ("EMSDK_VERSION", build_job.emsdk_version),
+                ("EMSDK_VERSION", (build_job.emsdk_version+"@main").split('@')[0]),
+                ("EMSDK_TAG",  (build_job.emsdk_version+"@main").split('@')[1]),
                 ("WIN_AUTODESK_QT_BINDIR", build_job.win_autodesk_qt_bindir()),
                 ("TOOL1_ARGS", build_job.tool_options.get("TOOL1_ARGS", "")),
                 ("LIST_TOOL1_CMD", build_job.tool_options.get("LIST_TOOL1_CMD", "")),
@@ -426,11 +204,11 @@ for platform_build_job in all_platform_build_jobs:
 
 print("Setting Variables below")
 print(
-    f"##vso[task.setVariable variable=linux;isOutput=true]{json.dumps(matrices['linux'])}"
-)
-print(
     f"##vso[task.setVariable variable=windows;isOutput=true]{json.dumps(matrices['windows'])}"
 )
 print(
-    f"##vso[task.setVariable variable=mac;isOutput=true]{json.dumps(matrices['mac'])}"
+    f"##vso[task.setVariable variable=linux;isOutput=true]{''}"
+)
+print(
+    f"##vso[task.setVariable variable=mac;isOutput=true]{''}"
 )

@@ -38,7 +38,12 @@ dir_for_version = QtRepoProperty.dir_for_version
 
 
 def unpatched_paths() -> List[str]:
-    return ["/home/qt/work/install", "/Users/qt/work/install"]
+    return [
+        "/home/qt/work/install/",
+        "/Users/qt/work/install/",
+        "\\home\\qt\\work\\install\\",
+        "\\Users\\qt\\work\\install\\",
+    ]
 
 
 class Updater:
@@ -101,6 +106,11 @@ class Updater:
                     self.qconfigs[vals[0]] = vals[1]
                 return True
         return False
+
+    def patch_prl(self, oldvalue):
+        for prlfile in self.prefix.joinpath("lib").glob("*.prl"):
+            self.logger.info("Patching {}".format(prlfile))
+            self._patch_textfile(prlfile, oldvalue, "$$[QT_INSTALL_LIBS]")
 
     def patch_pkgconfig(self, oldvalue, os_name):
         for pcfile in self.prefix.joinpath("lib", "pkgconfig").glob("*.pc"):
@@ -180,7 +190,7 @@ class Updater:
         qmake_path = self.prefix / "bin" / ("qmake.bat" if os_name == "windows" else "qmake")
         self.logger.info(f"Patching {qmake_path}")
         for unpatched in unpatched_paths():
-            self._patch_textfile(qmake_path, f"{unpatched}/bin", patched, is_executable=True)
+            self._patch_textfile(qmake_path, f"{unpatched}bin", patched, is_executable=True)
 
     def patch_qtcore(self, target):
         """patch to QtCore"""
@@ -240,7 +250,7 @@ class Updater:
 
         self._patch_textfile(target_qt_conf, old_host_lib_execs, f"HostLibraryExecutables={new_host_lib_execs}")
         for unpatched in unpatched_paths():
-            self._patch_textfile(target_qt_conf, f"Prefix={unpatched}/target", new_targetprefix)
+            self._patch_textfile(target_qt_conf, f"Prefix={unpatched}target", new_targetprefix)
         self._patch_textfile(target_qt_conf, "HostPrefix=../../", new_hostprefix)
         self._patch_textfile(target_qt_conf, "HostData=target", new_hostdata)
 
@@ -282,6 +292,8 @@ class Updater:
                 "ios",
                 "android",
                 "wasm_32",
+                "wasm_singlethread",
+                "wasm_multithread",
                 "android_x86_64",
                 "android_arm64_v8a",
                 "android_x86",
@@ -292,10 +304,14 @@ class Updater:
                 if target.os_name == "linux":
                     updater.patch_pkgconfig("/home/qt/work/install", target.os_name)
                     updater.patch_libtool("/home/qt/work/install/lib", target.os_name)
+#                    updater.patch_prl("/home/qt/work/install/lib")
                 elif target.os_name == "mac":
                     updater.patch_pkgconfig("/Users/qt/work/install", target.os_name)
                     updater.patch_libtool("/Users/qt/work/install/lib", target.os_name)
+#                    updater.patch_prl("/Users/qt/work/install/lib")
                 elif target.os_name == "windows":
+#                    updater.patch_pkgconfig("c:/Users/qt/work/install", target.os_name)
+#                    updater.patch_prl("c:/Users/qt/work/install/lib")
                     updater.make_qtenv2(base_dir, version_dir, arch_dir)
                 if version < Version("5.14.0"):
                     updater.patch_qtcore(target)

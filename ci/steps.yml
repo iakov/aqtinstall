@@ -103,6 +103,13 @@ steps:
           else                                                                  # fail if 'wasm_32' is in the list
             ! aqt list-qt $(HOST) $(TARGET) --arch $(QT_VERSION) | grep -w -q "wasm_32"
           fi
+        
+          # Extra check for Qt 6.5.0 WASM:
+          for host in mac linux windows; do
+            export WASM_ARCHES=$(aqt list-qt $host desktop --arch 6.5.0)
+            echo $WASM_ARCHES | grep -w -q "wasm_singlethread"                  # fail if 'wasm_singlethread' is not in the list
+            echo $WASM_ARCHES | grep -w -q "wasm_multithread"                   # fail if 'wasm_multithread' is not in the list
+          done
         fi
         aqt list-qt $(HOST) $(TARGET) --spec "$(SPEC)" --arch latest
 
@@ -163,7 +170,7 @@ steps:
       mkdir $(Build.BinariesDirectory)/tests
       (cd $(Build.BinariesDirectory)/tests; 7zr x $(Build.SourcesDirectory)/ci/accelbubble.7z)
       export PATH=$(QT_BINDIR):$PATH
-      qmake $(Build.BinariesDirectory)/tests/accelbubble
+      qmake -d $(Build.BinariesDirectory)/tests/accelbubble
       make
     condition: and(eq(variables['TARGET'], 'android'), or(eq(variables['Agent.OS'], 'Linux'), eq(variables['Agent.OS'], 'Darwin')), ne(variables['SUBCOMMAND'], 'list'), ne(variables['SUBCOMMAND'], 'install-tool'))
     displayName: Build accelbubble example application to test for android
@@ -175,7 +182,7 @@ steps:
       mkdir $(Build.BinariesDirectory)/tests
       (cd $(Build.BinariesDirectory)/tests; 7zr x $(Build.SourcesDirectory)/ci/accelbubble.7z)
       export PATH=$(QT_BINDIR):$PATH
-      qmake $(Build.BinariesDirectory)/tests/accelbubble
+      qmake -d $(Build.BinariesDirectory)/tests/accelbubble
       make
     condition: |
         and(eq(variables['TARGET'], 'ios'), 
@@ -241,9 +248,19 @@ steps:
       mkdir $(Build.BinariesDirectory)/tests
       (cd $(Build.BinariesDirectory)/tests; 7zr x $(Build.SourcesDirectory)/ci/helloworld.7z)
       export PATH=$(QT_BINDIR):$PATH
-      qmake $(Build.BinariesDirectory)/tests/helloworld
+      qmake -d $(Build.BinariesDirectory)/tests/helloworld
       make
-    condition: and(eq( variables['TARGET'], 'desktop' ), ne( variables['ARCH'], 'wasm_32' ), or(eq(variables['Agent.OS'], 'Linux'), eq(variables['Agent.OS'], 'Darwin')), eq(variables['MODULE'], ''), eq(variables['SUBCOMMAND'], 'install-qt'))
+    condition: |
+        and(
+          eq( variables['TARGET'], 'desktop' ),
+          not( startsWith( variables['ARCH'], 'wasm_' ) ),
+          or(
+            eq(variables['Agent.OS'], 'Linux'),
+            eq(variables['Agent.OS'], 'Darwin')
+          ),
+          eq(variables['MODULE'], ''),
+          eq(variables['SUBCOMMAND'], 'install-qt')
+        )
     displayName: Build test with qmake for Linux and macOS w/o extra module
   - powershell: |
       if ( $env:TOOLCHAIN -eq 'MSVC' ) {
@@ -259,7 +276,7 @@ steps:
         cd $(Build.BinariesDirectory)\tests
         7z x $(Build.SourcesDirectory)\ci\helloworld.7z
         cd ..
-        qmake $(Build.BinariesDirectory)\tests\helloworld
+        qmake -d $(Build.BinariesDirectory)\tests\helloworld
         jom
       } elseif ( $env:TOOLCHAIN -eq 'MINGW' ) {
         python -m aqt install-tool --outputdir $(Build.BinariesDirectory)/Qt $(HOST) desktop tools_mingw qt.tools.$(MINGW_VARIANT)
@@ -274,7 +291,7 @@ steps:
         cd $(Build.BinariesDirectory)\tests
         7z x $(Build.SourcesDirectory)\ci\helloworld.7z
         cd ..
-        qmake $(Build.BinariesDirectory)\tests\helloworld
+        qmake -d $(Build.BinariesDirectory)\tests\helloworld
         mingw32-make
       }
     condition: and(eq( variables['Agent.OS'], 'Windows_NT'), eq(variables['MODULE'], ''), eq(variables['SUBCOMMAND'], 'install-qt'))
@@ -293,7 +310,7 @@ steps:
       cd $(Build.BinariesDirectory)/tests
       7z x $(Build.SourcesDirectory)/ci/redditclient.7z
       cd ..
-      qmake $(Build.BinariesDirectory)\tests\redditclient
+      qmake -d $(Build.BinariesDirectory)\tests\redditclient
       nmake
     condition: and(eq( variables['Agent.OS'], 'Windows_NT'), eq(variables['TOOLCHAIN'], 'MSVC'), ne(variables['MODULE'], ''), ne(variables['VSVER'], '2019'))
     displayName: build test with qmake with MSVC with extra module
@@ -305,7 +322,7 @@ steps:
         (cd $(Build.BinariesDirectory)/tests/redditclient;patch -i redditclient_6.diff -p1)
       fi
       export PATH=$(QT_BINDIR):$PATH
-      qmake $(Build.BinariesDirectory)/tests/redditclient
+      qmake -d $(Build.BinariesDirectory)/tests/redditclient
       make
     condition: |
       and(eq( variables['TARGET'], 'desktop'),
@@ -316,10 +333,10 @@ steps:
     displayName: Build test with qmake for Linux and macOS with extra module
 
   ##----------------------------------------------------
-  # wasm_32 on linux and mac
+  # wasm_32/single/multithread on linux and mac
   - script: |
-      set -ex
-      git clone https://github.com/emscripten-core/emsdk.git
+      set -uex
+      git clone --depth=1 --branch=$(EMSDK_TAG) https://github.com/emscripten-core/emsdk.git
       cd emsdk
       ./emsdk install $(EMSDK_VERSION)
       ./emsdk activate --embedded $(EMSDK_VERSION)
@@ -332,12 +349,12 @@ steps:
       fi
       (cd $(Build.BinariesDirectory)/tests; 7zr x $(Build.SourcesDirectory)/ci/$OPENGLWINDOW_7Z)
       export PATH=$(QT_BINDIR):$PATH
-      qmake $(Build.BinariesDirectory)/tests/openglwindow
+      qmake -d $(Build.BinariesDirectory)/tests/openglwindow
       make
     workingDirectory: $(Build.BinariesDirectory)
     condition: |
       and(
-        eq( variables['ARCH'], 'wasm_32' ),
+        startsWith( variables['ARCH'], 'wasm_' ),
         or(
           eq(variables['Agent.OS'], 'Linux'),
           eq(variables['Agent.OS'], 'Darwin')
@@ -345,9 +362,9 @@ steps:
       )
     displayName: 'Build WebAssembler sample project on mac/linux'
 
-  # wasm_32 on Windows cmd.exe
+  # wasm_32/single/multithread on Windows cmd.exe
   - powershell: |
-      git clone https://github.com/emscripten-core/emsdk.git
+      git clone --depth=1 --branch=$(EMSDK_TAG) https://github.com/emscripten-core/emsdk.git
       cd emsdk
       .\emsdk install $(EMSDK_VERSION)
       .\emsdk activate --embedded $(EMSDK_VERSION)
@@ -360,11 +377,11 @@ steps:
       if ('$(QT_VERSION)' -like '6*') {
         7z x $(Build.SourcesDirectory)\ci\openglwindow_qt6.7z
         echo "Inlined qmake.bat command is: $(WIN_AUTODESK_QT_BINDIR)\qmake -qtconf $(WIN_QT_BINDIR)\target_qt.conf $(Build.BinariesDirectory)\tests\openglwindow"
-        $(WIN_AUTODESK_QT_BINDIR)\qmake.exe -qtconf "$(WIN_QT_BINDIR)\target_qt.conf" $(Build.BinariesDirectory)\tests\openglwindow
+        $(WIN_AUTODESK_QT_BINDIR)\qmake.exe -d -qtconf "$(WIN_QT_BINDIR)\target_qt.conf" $(Build.BinariesDirectory)\tests\openglwindow
       } else {
         7z x $(Build.SourcesDirectory)\ci\openglwindow.7z
         echo "Qt5: run qmake.exe"
-        qmake $(Build.BinariesDirectory)\tests\openglwindow
+        qmake -d $(Build.BinariesDirectory)\tests\openglwindow
       }
       if ($false -eq $?) {
         Write-Error "qmake failed."
@@ -380,7 +397,7 @@ steps:
     workingDirectory: $(Build.BinariesDirectory)
     condition: |
       and(
-        eq( variables['ARCH'], 'wasm_32' ),
+        startsWith( variables['ARCH'], 'wasm_' ),
         eq( variables['Agent.OS'], 'Windows_NT' )
       )
     displayName: 'Build WebAssembler sample project on windows'

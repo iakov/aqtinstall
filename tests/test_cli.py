@@ -89,8 +89,8 @@ def test_cli_check_version():
         ("windows", "winrt", "mingw32", "6", None, False),
         ("windows", "winrt", "mingw32", "bad spec", None, True),
         ("windows", "android", "android_x86", "6", Version("6.1.0"), False),
-        ("windows", "desktop", "android_x86", "6", Version("6.2.0"), False),  # does not validate arch
-        ("windows", "desktop", "android_fake", "6", Version("6.2.0"), False),  # does not validate arch
+        ("windows", "desktop", "android_x86", "6", Version("6.5.0"), False),  # does not validate arch
+        ("windows", "desktop", "android_fake", "6", Version("6.5.0"), False),  # does not validate arch
     ),
 )
 def test_cli_determine_qt_version(
@@ -205,7 +205,6 @@ def test_cli_check_mirror():
     ),
 )
 def test_set_arch(arch: Optional[str], host: str, target: str, version: str, expect: Optional[str]):
-
     if not expect:
         with pytest.raises(CliInputError) as e:
             Cli._set_arch(arch, host, target, version)

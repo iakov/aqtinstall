@@ -29,17 +29,6 @@ jobs:
       name: mtrx
       displayName: Generate test matrices and set variables in Azure Pipelines
 
-- job: Mac
-  dependsOn: MatricesGenerator
-  pool:
-    vmImage: 'macOS-12'
-  strategy:
-    matrix: $[ dependencies.MatricesGenerator.outputs['mtrx.mac'] ]
-  steps:
-    - script: brew install p7zip
-      displayName: Install 7zip
-    - template: ci/steps.yml
-
 - job: Windows
   dependsOn: MatricesGenerator
   pool:
@@ -50,14 +39,5 @@ jobs:
     MODULES_FOLDER: '$(System.DefaultWorkingDirectory)\CachedPowershellModules'
     startYear: $[format('{0:yyyy}', pipeline.startTime)]
     startMonth: $[format('{0:MM}', pipeline.startTime)]
-  steps:
-    - template: ci/steps.yml
-
-- job: Linux
-  dependsOn: MatricesGenerator
-  pool:
-    vmImage: 'ubuntu-20.04'
-  strategy:
-    matrix: $[ dependencies.MatricesGenerator.outputs['mtrx.linux'] ]
   steps:
     - template: ci/steps.yml
