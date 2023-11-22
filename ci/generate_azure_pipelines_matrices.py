@@ -154,6 +154,17 @@ windows_build_jobs.extend(
             mingw_variant="win64_mingw810",
             mirror=random.choice(MIRRORS),
         ),
+        BuildJob(
+            "install-qt",
+            "5.15.2",
+            "windows",
+            "desktop",
+            "win64_mingw81",
+            "mingw81_64",
+            subarchives="qtwinextras qtmultimedia qtbase qttools",
+            mingw_variant="win64_mingw810",
+            mirror=random.choice(MIRRORS),
+        ),
         # Known issue with Azure-Pipelines environment: it has a pre-installed mingw81 which cause link error.
         # BuildJob('install', '5.15.0', 'windows', 'desktop', 'win32_mingw81', 'mingw81_32', mirror=MIRROR),
         BuildJob(
@@ -185,6 +196,16 @@ windows_build_jobs.extend(
             "mingw73_64",
             mingw_variant="win64_mingw730",
             spec=">1,<5.15",  # Don't redirect output! Must be wrapped in quotes!
+            mirror=random.choice(MIRRORS),
+        ),
+        BuildJob(
+            "install-qt",
+            "5.11.3",
+            "windows",
+            "desktop",
+            "win32_msvc2015",
+            "msvc2015",
+            subarchives="qtwinextras qtmultimedia qtbase qttools",
             mirror=random.choice(MIRRORS),
         ),
         BuildJob(
@@ -227,7 +248,7 @@ linux_build_jobs.extend(
             "desktop",
             "gcc_64",
             "gcc_64",
-            subarchives="qtbase qttools qt icu",
+            subarchives="qtbase qttools qt icu qttools",
         ),
         BuildJob(
             # Archives stored as .7z
