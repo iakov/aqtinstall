@@ -342,28 +342,33 @@ steps:
 
           Import-VisualStudioVars -VisualStudioVersion $(VSVER) -Architecture $(ARCHITECTURE)
           $env:Path += ";$(WIN_QT_BINDIR)"
+          try { rm -r -fo $(Build.BinariesDirectory)\tests } catch { $Error.Clear() }
           mkdir -Force $(Build.BinariesDirectory)\tests
           cd $(Build.BinariesDirectory)\tests
           7z x $(Build.SourcesDirectory)\ci\helloworld_qttools.7z
-          cd ..
           qmake -d $(Build.BinariesDirectory)\tests\helloworld_qttools
-          jom
+          $Env:MAKEFLAGS = 'G U'
+          nmake
+          cd ..
         } elseif ( $env:TOOLCHAIN -eq 'MINGW' ) {
-          python -m aqt install-tool $(if (($QT_BASE_MIRROR + "") -ne "") { "-b $QT_BASE_MIRROR" } else {""}) `
-             --outputdir $(Build.BinariesDirectory)/Qt $(HOST) desktop tools_mingw qt.tools.$(MINGW_VARIANT)
-          if ($?) {
-            Write-Host 'Successfully installed tools_mingw'
-          } else {
-            throw 'Failed to install tools_mingw'
-          }
           Set-Item -Path Env:Path -Value ("$(Build.BinariesDirectory)\Qt\Tools\$(MINGW_FOLDER)\bin;$(WIN_QT_BINDIR);" + $Env:Path)
           Write-Host "Path == " + $env:Path
+          if (![bool] (Get-Command -ErrorAction Ignore -Type Application mingw32-make)) {
+            python -m aqt install-tool $(if (($QT_BASE_MIRROR + "") -ne "") { "-b $QT_BASE_MIRROR" } else {""}) `
+               --outputdir $(Build.BinariesDirectory)/Qt $(HOST) desktop tools_mingw qt.tools.$(MINGW_VARIANT)
+            if ($?) {
+              Write-Host 'Successfully installed tools_mingw'
+            } else {
+              throw 'Failed to install tools_mingw'
+            }
+          }
+          try { rm -r -fo $(Build.BinariesDirectory)\tests } catch { $Error.Clear() }
           mkdir -Force $(Build.BinariesDirectory)\tests
           cd $(Build.BinariesDirectory)\tests
           7z x $(Build.SourcesDirectory)\ci\helloworld_qttools.7z
-          cd ..
           qmake -d $(Build.BinariesDirectory)\tests\helloworld_qttools
           mingw32-make
+          cd ..
         }
     condition: |
         and(

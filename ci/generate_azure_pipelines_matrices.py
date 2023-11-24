@@ -96,9 +96,9 @@ mac_build_jobs = []
 windows_build_jobs = []
 
 all_platform_build_jobs = [
-    PlatformBuildJobs("linux", linux_build_jobs),
-    PlatformBuildJobs("mac", mac_build_jobs),
     PlatformBuildJobs("windows", windows_build_jobs),
+    PlatformBuildJobs("linux", []),
+    PlatformBuildJobs("mac", []),
 ]
 
 # Linux Desktop
@@ -121,81 +121,10 @@ windows_build_jobs.extend(
             "5.15.2",
             "windows",
             "desktop",
-            "win32_msvc2019",
-            "msvc2019",
-            mirror=random.choice(MIRRORS),
-        ),
-        BuildJob(
-            "install-qt",
-            "5.14.2",
-            "windows",
-            "desktop",
-            "win32_mingw73",
-            "mingw73_32",
-            mingw_variant="win32_mingw730",
-            mirror=random.choice(MIRRORS),
-        ),
-        BuildJob(
-            "install-qt",
-            "5.13.2",
-            "windows",
-            "desktop",
-            "win64_msvc2015_64",
-            "msvc2015_64",
-            mirror=random.choice(MIRRORS),
-        ),
-        BuildJob(
-            "install-qt",
-            "5.15.2",
-            "windows",
-            "desktop",
-            "win64_mingw81",
-            "mingw81_64",
-            mingw_variant="win64_mingw810",
-            mirror=random.choice(MIRRORS),
-        ),
-        BuildJob(
-            "install-qt",
-            "5.15.2",
-            "windows",
-            "desktop",
             "win64_mingw81",
             "mingw81_64",
             subarchives="qtwinextras qtmultimedia qtbase qttools",
             mingw_variant="win64_mingw810",
-            mirror=random.choice(MIRRORS),
-        ),
-        # Known issue with Azure-Pipelines environment: it has a pre-installed mingw81 which cause link error.
-        # BuildJob('install', '5.15.0', 'windows', 'desktop', 'win32_mingw81', 'mingw81_32', mirror=MIRROR),
-        BuildJob(
-            "install-qt",
-            "5.15.2",
-            "windows",
-            "desktop",
-            "win64_msvc2019_64",
-            "msvc2019_64",
-            module="qtcharts qtnetworkauth",
-            mirror=random.choice(MIRRORS),
-        ),
-        BuildJob(
-            "install-qt",
-            "5.9.0",
-            "windows",
-            "desktop",
-            "win64_msvc2015_64",
-            "msvc2015_64",
-            module="qtcharts qtnetworkauth",
-            mirror=random.choice(MIRRORS),
-        ),
-        BuildJob(
-            "install-qt",
-            "5.14.2",
-            "windows",
-            "desktop",
-            "win64_mingw73",
-            "mingw73_64",
-            mingw_variant="win64_mingw730",
-            spec=">1,<5.15",  # Don't redirect output! Must be wrapped in quotes!
             mirror=random.choice(MIRRORS),
         ),
         BuildJob(
@@ -207,21 +136,6 @@ windows_build_jobs.extend(
             "msvc2015",
             subarchives="qtwinextras qtmultimedia qtbase qttools",
             mirror=random.choice(MIRRORS),
-        ),
-        BuildJob(
-            "install-qt",
-            "6.5.2",
-            "windows",
-            "desktop",
-            "win64_msvc2019_arm64",
-            "msvc2019_arm64",
-            is_autodesktop=True,    # Should install win64_msvc2019_arm64 in parallel
-        ),
-        BuildJob(
-            # Archives stored as .zip
-            "install-src", "6.4.3", "windows", "desktop", "gcc_64", "gcc_64", subarchives="qtlottie",
-            # Fail the job if this path does not exist:
-            check_output_cmd="ls -lh ./6.4.3/Src/qtlottie/",
         ),
     ]
 )
